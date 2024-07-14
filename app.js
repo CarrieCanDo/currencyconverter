@@ -1,10 +1,11 @@
-// Handles Express server setup, middleware configuration, and defines API routes for CRUD operations on favorite currency pairs.
 const express = require('express');
-const { sequelize, CurrencyPair } = require('./models');
+const { sequelize, CurrencyPair } = require('./models'); // Correct import
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
+
+const PORT = process.env.PORT || 3000; // Move the PORT definition here
 
 // POST route to create a new favorite currency pair
 app.post('/api/favorites', async (req, res) => {
@@ -27,7 +28,14 @@ app.get('/api/favorites', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// Sync database and start server
+sequelize.sync()
+    .then(() => {
+        console.log('Database & tables created!');
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        console.error('Failed to sync database:', err);
+    });

@@ -18,6 +18,15 @@ const CurrencyPair = sequelize.define('CurrencyPair', {
     }
 });
 
+sequelize.authenticate()
+.then(() => console.log(`Connection has been established successfully.`))
+.catch(err => console.error(`Unable to connect to the database:`, err));
+
+// Synchronize all defined models to the DB.
+sequelize.sync()
+    .then(() => console.log('Database & tables created!'))
+    .catch(err => console.error('Error creating database & tables:', err));
+
 module.exports = {
     sequelize,
     CurrencyPair

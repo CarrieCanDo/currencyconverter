@@ -79,76 +79,83 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
- // Fetch historical rates
-function fetchHistoricalRates(baseCurrency, targetCurrency, date) {
-    const API_KEY = "fca_live_dWPx35fk2g6THo7VvSgrbBvTmCWSzxUg93C5hN2p";
-    const API_URL = "https://api.freecurrencyapi.com/v1";
+    // Fetch historical rates
+    function fetchHistoricalRates(baseCurrency, targetCurrency, date) {
+        const url = `${API_URL}/historical?apikey=${API_KEY}&base_currency=${baseCurrency}&date=${date}&currencies=${targetCurrency}`;
+        console.log('Fetching historical rates with URL:', url);
 
-    const url = `${API_URL}/historical?apikey=${API_KEY}&base_currency=${baseCurrency}&date=${date}&currencies=${targetCurrency}`;
-    console.log('Fetching historical rates with URL:', url);
-    
-    fetch(url, {
-        method: 'GET'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Historical rates data:', data);
-        displayHistoricalRates(data.data, date);
-    })
-    .catch(error => {
-        console.error('Error fetching historical rates:', error);
-        historicalRatesContainer.textContent = 'Error fetching historical rates';
-    });
-}
-})
-
-// Save favorite pair
-function saveFavoritePair() {
-    const baseCurrency = baseCurrencySelect.value;
-    const targetCurrency = targetCurrencySelect.value;
-    const pair = { baseCurrency, targetCurrency };
-
-    fetch('/api/favorites', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(pair)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Saved favorite pair:', data);
-        displayFavoritePairs();
-    })
-    .catch(error => console.error('Error saving favorite pair:', error));
-}
-
-// Display favorite pairs
-function displayFavoritePairs() {
-    favoritePairsContainer.innerHTML = '';
-    fetch('/api/favorites')
-    .then(response => response.json())
-    .then(pairs => {
-        pairs.forEach(pair => {
-            const button = document.createElement('button');
-            button.textContent = `${pair.baseCurrency}/${pair.targetCurrency}`;
-            button.addEventListener('click', () => {
-                baseCurrencySelect.value = pair.baseCurrency;
-                targetCurrencySelect.value = pair.targetCurrency;
-                fetchExchangeRates(pair.baseCurrency);
-            });
-            favoritePairsContainer.appendChild(button);
+        fetch(url, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Fetched historical rates:', data);
+            displayHistoricalRates(data.data);
+        })
+        .catch(error => {
+            console.error('Error fetching historical rates:', error);
+            historicalRatesContainer.textContent = 'Error fetching data';
         });
-    })
-    .catch(error => console.error('Error fetching favorite pairs:', error));
-}
+    }
 
-// Initialize
-fetchCurrencies();
-displayFavoritePairs();
+    // Display historical rates
+    function displayHistoricalRates(rates) {
+        historicalRatesContainer.innerHTML = '';
+        for (let date in rates) {
+            const rate = rates[date][targetCurrencySelect.value];
+            const rateItem = document.createElement('div');
+            rateItem.textContent = `Date: ${date}, Rate: ${rate}`;
+            historicalRatesContainer.appendChild(rateItem);
+        }
+    }
 
+    // Fetch and display favorite currency pairs
+    function fetchFavorites() {
+        fetch('/api/favorites')
+            .then(response => response.json())
+            .then(data => {
+                favoritePairsContainer.innerHTML = '';
+                data.forEach(pair => {
+                    const pairItem = document.createElement('div');
+                    pairItem.textContent = `${pair.baseCurrency} to ${pair.targetCurrency}`;
+                    favoritePairsContainer.appendChild(pairItem);
+                });
+            })
+            .catch(error => console.error('Error fetching favorite pairs:', error));
+    }
+
+    // Save a favorite currency pair
+    function saveFavoritePair() {
+        const baseCurrency = baseCurrencySelect.value;
+        const targetCurrency = targetCurrencySelect.value;
+        fetch('/api/favorites', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ baseCurrency, targetCurrency })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Saved favorite pair:', data);
+            fetchFavorites();
+        })
+        .catch(error => console.error('Error saving favorite pair:', error));
+    }
+
+    // Event listeners
+    baseCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
+    targetCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
+    amountInput.addEventListener('input', () => fetchExchangeRates(baseCurrencySelect.value));
+    historicalRatesBtn.addEventListener('click', () => fetchHistoricalRates(baseCurrencySelect.value, targetCurrencySelect.value, '2023-07-01'));
+    saveFavoriteBtn.addEventListener('click', saveFavoritePair);
+
+    // Initial fetches
+    fetchCurrencies();
+    fetchFavorites();
+});
