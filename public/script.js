@@ -9,26 +9,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const favoritePairsContainer = document.getElementById('favorite-currency-pairs');
 
     const API_KEY = "fca_live_dWPx35fk2g6THo7VvSgrbBvTmCWSzxUg93C5hN2p";
-    const API_URL = "https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_dWPx35fk2g6THo7VvSgrbBvTmCWSzxUg93C5hN2p";
+    const API_URL = "https://api.freecurrencyapi.com/v1";
 
     // Fetch available currencies
     function fetchCurrencies() {
-        fetch(`${API_URL}/currencies`, {
-            method: 'GET',
-            headers: {
-                'apikey': API_KEY
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            populateCurrencySelects(data.data);
-        })
-        .catch(error => console.error('Error fetching currencies:', error));
+        fetch(`${API_URL}/currencies?apikey=${API_KEY}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetched currencies:', data);
+                populateCurrencySelects(data.data);
+            })
+            .catch(error => console.error('Error fetching currencies:', error));
     }
 
     // Populate currency dropdowns
@@ -48,31 +44,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch exchange rates
     function fetchExchangeRates(baseCurrency) {
-        fetch(`${API_URL}/latest?base_currency=${baseCurrency}&currencies=EUR,USD,CAD,AUD,BGN,BRL,CAD,CHF,CNY,CZK,DKK`, {
-            method: 'GET',
-            headers: {
-                'apikey': API_KEY
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            updateConvertedAmount(data.data);
-        })
-        .catch(error => {
-            console.error('Error fetching exchange rates:', error);
-            convertedAmountDisplay.textContent = 'Error fetching data';
-        });
+        fetch(`${API_URL}/latest?apikey=${API_KEY}&base_currency=${baseCurrency}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetched exchange rates:', data);
+                updateConvertedAmount(data.data);
+            })
+            .catch(error => {
+                console.error('Error fetching exchange rates:', error);
+                convertedAmountDisplay.textContent = 'Error fetching data';
+            });
     }
 
     // Update converted amount
     function updateConvertedAmount(rates) {
         const amount = parseFloat(amountInput.value);
         const rate = rates[targetCurrencySelect.value];
+        console.log('Rates:', rates);
+        console.log('Selected target currency rate:', rate);
         if (isNaN(amount) || amount <= 0) {
             convertedAmountDisplay.textContent = 'Enter a valid amount';
             return;
@@ -85,84 +79,76 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Fetch historical rates
-    function fetchHistoricalRates(baseCurrency, targetCurrency, date) {
-        fetch(`${API_URL}/historical?base_currency=${baseCurrency}&date=${date}&currencies=${targetCurrency}`, {
-            method: 'GET',
-            headers: {
-                'apikey': API_KEY
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            displayHistoricalRates(data.data, date);
-        })
-        .catch(error => {
-            console.error('Error fetching historical rates:', error);
-            historicalRatesContainer.textContent = 'Error fetching historical rates';
-        });
-    }
+ // Fetch historical rates
+function fetchHistoricalRates(baseCurrency, targetCurrency, date) {
+    const API_KEY = "fca_live_dWPx35fk2g6THo7VvSgrbBvTmCWSzxUg93C5hN2p";
+    const API_URL = "https://api.freecurrencyapi.com/v1";
 
-    // Display historical rates
-    function displayHistoricalRates(rates, date) {
-        const rate = rates[targetCurrencySelect.value];
-        if (rate) {
-            historicalRatesContainer.textContent = `Historical exchange rate on ${date}: 1 ${baseCurrencySelect.value} = ${rate} ${targetCurrencySelect.value}`;
-        } else {
-            historicalRatesContainer.textContent = `Rate not available for ${date}`;
+    const url = `${API_URL}/historical?apikey=${API_KEY}&base_currency=${baseCurrency}&date=${date}&currencies=${targetCurrency}`;
+    console.log('Fetching historical rates with URL:', url);
+    
+    fetch(url, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
         }
-    }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Historical rates data:', data);
+        displayHistoricalRates(data.data, date);
+    })
+    .catch(error => {
+        console.error('Error fetching historical rates:', error);
+        historicalRatesContainer.textContent = 'Error fetching historical rates';
+    });
+}
+})
 
-    // Save favorite pair
-    function saveFavoritePair() {
-        const baseCurrency = baseCurrencySelect.value;
-        const targetCurrency = targetCurrencySelect.value;
-        const pair = `${baseCurrency}/${targetCurrency}`;
+// Save favorite pair
+function saveFavoritePair() {
+    const baseCurrency = baseCurrencySelect.value;
+    const targetCurrency = targetCurrencySelect.value;
+    const pair = { baseCurrency, targetCurrency };
 
-        // Save favorite pair to localStorage
-        let favorites = JSON.parse(localStorage.getItem('favoritePairs')) || [];
-        if (!favorites.includes(pair)) {
-            favorites.push(pair);
-            localStorage.setItem('favoritePairs', JSON.stringify(favorites));
-            displayFavoritePairs();
-        }
-    }
+    fetch('/api/favorites', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pair)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Saved favorite pair:', data);
+        displayFavoritePairs();
+    })
+    .catch(error => console.error('Error saving favorite pair:', error));
+}
 
-    // Display favorite pairs
-    function displayFavoritePairs() {
-        favoritePairsContainer.innerHTML = '';
-        let favorites = JSON.parse(localStorage.getItem('favoritePairs')) || [];
-        favorites.forEach(pair => {
+// Display favorite pairs
+function displayFavoritePairs() {
+    favoritePairsContainer.innerHTML = '';
+    fetch('/api/favorites')
+    .then(response => response.json())
+    .then(pairs => {
+        pairs.forEach(pair => {
             const button = document.createElement('button');
-            button.textContent = pair;
+            button.textContent = `${pair.baseCurrency}/${pair.targetCurrency}`;
             button.addEventListener('click', () => {
-                const currencies = pair.split('/');
-                baseCurrencySelect.value = currencies[0];
-                targetCurrencySelect.value = currencies[1];
-                fetchExchangeRates(currencies[0]);
+                baseCurrencySelect.value = pair.baseCurrency;
+                targetCurrencySelect.value = pair.targetCurrency;
+                fetchExchangeRates(pair.baseCurrency);
             });
             favoritePairsContainer.appendChild(button);
         });
-    }
+    })
+    .catch(error => console.error('Error fetching favorite pairs:', error));
+}
 
-    // Event listeners
-    baseCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
-    targetCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
-    amountInput.addEventListener('input', () => updateConvertedAmount(baseCurrencySelect.value));
-    historicalRatesBtn.addEventListener('click', () => {
-        const date = prompt('Enter a date (YYYY-MM-DD):', '2021-01-01');
-        if (date) {
-            fetchHistoricalRates(baseCurrencySelect.value, targetCurrencySelect.value, date);
-        }
-    });
-    saveFavoriteBtn.addEventListener('click', saveFavoritePair);
+// Initialize
+fetchCurrencies();
+displayFavoritePairs();
 
-    // Initialize
-    fetchCurrencies();
-    displayFavoritePairs();
-});

@@ -6,10 +6,24 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f0f0f0;
+    background-image: url('images/currency.png');
+    background-size: cover; /* Makes the background cover the entire page */
+    background-repeat: no-repeat; /* Prevents the background from repeating */
+    background-position: center center; /* Centers the background image */
 }
 
 h1 {
     text-align: center;
+    padding: 30px;
+    color: rgb(232, 243, 241);
+    font-size: 50px;
+    text-shadow: 
+        -1px -1px 0 #12877b,  
+        -1px -1px 0 #12877b,
+        -1px -1px 0 #12877b,
+        -1px -1px 0 #12877b;
+
+    
 }
 
 .converter {
