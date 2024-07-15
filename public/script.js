@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const historicalRatesContainer = document.getElementById('historical-rates-container');
     const saveFavoriteBtn = document.getElementById('save-favorite');
     const favoritePairsContainer = document.getElementById('favorite-currency-pairs');
+    const dateInput = document.getElementById('date'); // New date input
 
     const API_KEY = "fca_live_dWPx35fk2g6THo7VvSgrbBvTmCWSzxUg93C5hN2p";
     const API_URL = "https://api.freecurrencyapi.com/v1";
@@ -121,9 +122,14 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 favoritePairsContainer.innerHTML = '';
                 data.forEach(pair => {
-                    const pairItem = document.createElement('div');
-                    pairItem.textContent = `${pair.baseCurrency} to ${pair.targetCurrency}`;
-                    favoritePairsContainer.appendChild(pairItem);
+                    const button = document.createElement('button');
+                    button.textContent = `${pair.baseCurrency} to ${pair.targetCurrency}`;
+                    button.addEventListener('click', () => {
+                        baseCurrencySelect.value = pair.baseCurrency;
+                        targetCurrencySelect.value = pair.targetCurrency;
+                        fetchExchangeRates(pair.baseCurrency);
+                    });
+                    favoritePairsContainer.appendChild(button);
                 });
             })
             .catch(error => console.error('Error fetching favorite pairs:', error));
@@ -152,7 +158,14 @@ document.addEventListener("DOMContentLoaded", function () {
     baseCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
     targetCurrencySelect.addEventListener('change', () => fetchExchangeRates(baseCurrencySelect.value));
     amountInput.addEventListener('input', () => fetchExchangeRates(baseCurrencySelect.value));
-    historicalRatesBtn.addEventListener('click', () => fetchHistoricalRates(baseCurrencySelect.value, targetCurrencySelect.value, '2023-07-01'));
+    historicalRatesBtn.addEventListener('click', () => {
+        const date = dateInput.value; // Get the date input value
+        if (date) {
+            fetchHistoricalRates(baseCurrencySelect.value, targetCurrencySelect.value, date);
+        } else {
+            historicalRatesContainer.textContent = 'Please select a date';
+        }
+    });
     saveFavoriteBtn.addEventListener('click', saveFavoritePair);
 
     // Initial fetches

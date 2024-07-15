@@ -1,11 +1,11 @@
 const express = require('express');
-const { sequelize, CurrencyPair } = require('./models'); // Correct import
+const { sequelize, CurrencyPair } = require('./models'); 
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-const PORT = process.env.PORT || 3000; // Move the PORT definition here
+const PORT = process.env.PORT || 3000; 
 
 // POST route to create a new favorite currency pair
 app.post('/api/favorites', async (req, res) => {
